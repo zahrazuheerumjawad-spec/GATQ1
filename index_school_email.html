@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GAT Quantitative Practice</title>
+<style>
+:root {
+  --navy:#1a365d; --teal:#257d79; --coral:#e16468; --gold:#dea947;
+  --bg:#f5f8fa; --text:#2a303a; --muted:#66707c; --green:#308954;
+  --white:#fff; --border:#d9e2e8; --red:#b64040;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+header{background:var(--navy);color:white;padding:24px 18px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,.12)}
+header h1{margin:0;font-size:30px}
+header p{margin:8px 0 0;color:#dce9f1}
+.wrap{max-width:1100px;margin:auto;padding:0 18px}
+.account{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:16px auto}
+.badge{background:white;border:1px solid var(--border);border-radius:999px;padding:9px 13px;font-weight:700;color:var(--navy)}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:#fff;border:1px solid var(--border);border-radius:16px;padding:14px;margin:12px auto}
+select,input,button{font:inherit}
+select,input{border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:white}
+button{border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:white;cursor:pointer;font-weight:700}
+button.primary{background:var(--teal);color:white;border-color:var(--teal)}
+button.save{background:var(--navy);color:white;border-color:var(--navy)}
+button.danger{color:var(--red)}
+.stats{margin-left:auto;color:var(--muted);font-weight:700}
+main{max-width:1100px;margin:18px auto 50px;padding:0 18px}
+.card{background:white;border:1px solid var(--border);border-radius:18px;padding:24px;box-shadow:0 6px 18px rgba(30,55,80,.06);margin-bottom:18px}
+.meta{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px}
+.section{color:var(--teal);font-weight:800}
+.qnum{color:var(--muted);font-weight:700}
+.question{font-size:22px;font-weight:800;color:var(--navy);line-height:1.45;margin:16px 0 20px}
+.options{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.option{border:2px solid var(--border);border-radius:12px;padding:14px;text-align:left;background:white;transition:.18s}
+.option:hover{border-color:var(--teal);transform:translateY(-1px)}
+.option.selected{border-color:var(--teal);background:#eef8f7}
+.option.correct{border-color:var(--green);background:#eaf7ee}
+.option.wrong{border-color:var(--coral);background:#fdeeee}
+.letter{display:inline-flex;width:28px;height:28px;align-items:center;justify-content:center;border-radius:50%;background:#edf3f6;color:var(--teal);font-weight:800;margin-right:8px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.explanation{display:none;margin-top:18px;padding:16px;border-left:5px solid var(--green);background:#eef8f1;border-radius:10px;line-height:1.6}
+.explanation.show{display:block}
+.hidden{display:none!important}
+.overlay{position:fixed;inset:0;background:rgba(15,31,52,.9);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px}
+.modal{width:min(470px,96vw);background:white;border-radius:18px;padding:26px;box-shadow:0 18px 50px rgba(0,0,0,.3)}
+.modal h2{margin:0 0 8px;color:var(--navy)}
+.modal p{color:var(--muted);font-size:14px;line-height:1.5}
+.modal label{display:block;margin:12px 0 6px;font-weight:800;color:var(--navy)}
+.modal input{width:100%}
+.error{color:var(--red);font-size:13px;margin-top:10px;min-height:18px}
+.history{background:white;border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:30px;overflow:auto}
+.history table{width:100%;border-collapse:collapse;font-size:14px}
+.history th,.history td{padding:10px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}
+.history th{color:var(--navy)}
+.notice{background:#fff8e7;border:1px solid #f0d68e;border-radius:12px;padding:12px 14px;color:#6c5518;margin:12px auto}
+.success{background:#eaf7ee;border:1px solid #a8d8b5;color:#22663a}
+@media(max-width:720px){
+  .options{grid-template-columns:1fr} .stats{width:100%;margin-left:0}
+  header h1{font-size:24px} .question{font-size:19px}
+}
+</style>
+</head>
+<body>
+
+<div class="overlay" id="loginOverlay">
+  <div class="modal">
+    <h2>GAT Student Login</h2>
+    <p>Use your school email and the password provided by your coordinator.</p>
+    <label for="studentEmailLogin">School Email</label>
+    <input id="studentEmailLogin" type="email" autocomplete="username" placeholder="name@randschools.edu.sa">
+    <label for="studentPassword">Password</label>
+    <input id="studentPassword" type="password" autocomplete="current-password" placeholder="Enter password">
+    <button class="primary" id="loginBtn" style="width:100%;margin-top:16px">Login</button>
+    <div class="error" id="loginError"></div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="profileOverlay">
+  <div class="modal">
+    <h2>Student Profile</h2>
+    <p>Enter your full name and Student ID once. Your school email is linked to your login.</p>
+    <label for="studentNameInput">Full Name</label>
+    <input id="studentNameInput" placeholder="Enter full name">
+    <label for="studentIdInput">Student ID</label>
+    <input id="studentIdInput" placeholder="Enter Student ID">
+    <button class="primary" id="saveProfileBtn" style="width:100%;margin-top:16px">Save & Continue</button>
+    <div class="error" id="profileError"></div>
+  </div>
+</div>
+
+<header>
+  <h1>GAT Quantitative — 100 Questions</h1>
+  <p>Think → Choose → Explain → Improve</p>
+</header>
+
+<div class="wrap">
+  <div class="account">
+    <span class="badge" id="studentBadge">Not logged in</span>
+    <button id="historyBtn">My Saved Results</button>
+    <button class="danger" id="logoutBtn">Logout</button>
+  </div>
+
+  <div class="notice">
+    Each saved attempt is stored securely in Firebase under your account. Choose a section to save a section-specific result, or choose <strong>All sections</strong> for an overall result with a section breakdown.
+  </div>
+
+  <div class="toolbar">
+    <label for="sectionFilter"><strong>Section:</strong></label>
+    <select id="sectionFilter"><option value="all">All sections</option></select>
+    <button id="shuffleBtn">Shuffle</button>
+    <button id="resetBtn">Reset Current Answers</button>
+    <button class="save" id="saveAttemptBtn">Save This Attempt</button>
+    <div class="stats" id="stats">Answered: 0 | Score: 0</div>
+  </div>
+
+  <section class="history hidden" id="historySection">
+    <h2 style="color:var(--navy);margin-top:0">My Saved Results</h2>
+    <div id="historyTable">Loading...</div>
+  </section>
+</div>
+
+<main id="quiz"></main>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import {
+  getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import {
+  getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+const firebaseConfig = {"apiKey": "AIzaSyAsSZr49RloJJLzg08bTviw0Z6bet0NFXI", "authDomain": "gatrand-school.firebaseapp.com", "projectId": "gatrand-school", "storageBucket": "gatrand-school.firebasestorage.app", "messagingSenderId": "935323420868", "appId": "1:935323420868:web:b05df3966a995cbb4a6191"};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const questions = [{"num": 1, "section": "Numbers & Order of Operations", "question": "What is 18 ÷ 3 × 4 + 2?", "options": {"A": "20", "B": "24", "C": "26", "D": "30"}, "answer": "C", "answer_text": "26", "explanation": "Work left to right for division and multiplication: 18 ÷ 3 = 6, then 6 × 4 = 24, then 24 + 2 = 26."}, {"num": 2, "section": "Numbers & Order of Operations", "question": "What is 7 + 3 × 5 − 4?", "options": {"A": "18", "B": "22", "C": "46", "D": "50"}, "answer": "A", "answer_text": "18", "explanation": "Multiplication first: 3 × 5 = 15. Then 7 + 15 − 4 = 18."}, {"num": 3, "section": "Numbers & Order of Operations", "question": "What is (24 − 8) ÷ 4 + 6?", "options": {"A": "8", "B": "10", "C": "12", "D": "14"}, "answer": "B", "answer_text": "10", "explanation": "Parentheses first: 24 − 8 = 16. Then 16 ÷ 4 = 4, and 4 + 6 = 10."}, {"num": 4, "section": "Numbers & Order of Operations", "question": "If 144 is divided equally among 12 students, how many does each student receive?", "options": {"A": "10", "B": "11", "C": "12", "D": "14"}, "answer": "C", "answer_text": "12", "explanation": "144 ÷ 12 = 12."}, {"num": 5, "section": "Numbers & Order of Operations", "question": "Which number is divisible by both 3 and 4?", "options": {"A": "18", "B": "24", "C": "30", "D": "42"}, "answer": "B", "answer_text": "24", "explanation": "24 is divisible by 3 (2+4=6) and by 4 (24 ÷ 4 = 6)."}, {"num": 6, "section": "Numbers & Order of Operations", "question": "What is the remainder when 53 is divided by 6?", "options": {"A": "3", "B": "4", "C": "5", "D": "6"}, "answer": "C", "answer_text": "5", "explanation": "6 × 8 = 48, and 53 − 48 = 5."}, {"num": 7, "section": "Numbers & Order of Operations", "question": "What is 5² + 3 × 4?", "options": {"A": "32", "B": "37", "C": "40", "D": "100"}, "answer": "B", "answer_text": "37", "explanation": "5² = 25 and 3 × 4 = 12. Total = 37."}, {"num": 8, "section": "Fractions & Decimals", "question": "What is 3/4 + 1/8?", "options": {"A": "4/12", "B": "5/8", "C": "7/8", "D": "1"}, "answer": "C", "answer_text": "7/8", "explanation": "Convert 3/4 to eighths: 3/4 = 6/8. Then 6/8 + 1/8 = 7/8."}, {"num": 9, "section": "Fractions & Decimals", "question": "What is 5/6 − 1/3?", "options": {"A": "1/2", "B": "2/3", "C": "4/6", "D": "5/3"}, "answer": "A", "answer_text": "1/2", "explanation": "1/3 = 2/6. So 5/6 − 2/6 = 3/6 = 1/2."}, {"num": 10, "section": "Fractions & Decimals", "question": "What is 2/5 of 60?", "options": {"A": "12", "B": "20", "C": "24", "D": "30"}, "answer": "C", "answer_text": "24", "explanation": "60 ÷ 5 = 12, then 12 × 2 = 24."}, {"num": 11, "section": "Fractions & Decimals", "question": "Which decimal is equal to 3/8?", "options": {"A": "0.275", "B": "0.375", "C": "0.625", "D": "0.75"}, "answer": "B", "answer_text": "0.375", "explanation": "3 ÷ 8 = 0.375."}, {"num": 12, "section": "Fractions & Decimals", "question": "What is 1.25 + 0.8?", "options": {"A": "1.33", "B": "1.95", "C": "2.05", "D": "2.15"}, "answer": "C", "answer_text": "2.05", "explanation": "Align decimal places: 1.25 + 0.80 = 2.05."}, {"num": 13, "section": "Fractions & Decimals", "question": "What is 4.2 × 0.5?", "options": {"A": "0.21", "B": "1.2", "C": "2.1", "D": "8.4"}, "answer": "C", "answer_text": "2.1", "explanation": "Multiplying by 0.5 means taking half: half of 4.2 is 2.1."}, {"num": 14, "section": "Fractions & Decimals", "question": "Which is greatest?", "options": {"A": "0.58", "B": "3/5", "C": "0.59", "D": "57/100"}, "answer": "B", "answer_text": "3/5", "explanation": "3/5 = 0.60, which is greater than 0.59, 0.58, and 0.57."}, {"num": 15, "section": "Ratios, Percentages & Proportions", "question": "The ratio of boys to girls is 3:5. If there are 15 boys, how many girls are there?", "options": {"A": "20", "B": "25", "C": "30", "D": "35"}, "answer": "B", "answer_text": "25", "explanation": "3 parts = 15, so 1 part = 5. Girls = 5 parts = 25."}, {"num": 16, "section": "Ratios, Percentages & Proportions", "question": "What is 20% of 350?", "options": {"A": "60", "B": "70", "C": "75", "D": "80"}, "answer": "B", "answer_text": "70", "explanation": "10% of 350 is 35, so 20% is 70."}, {"num": 17, "section": "Ratios, Percentages & Proportions", "question": "A price of 200 SAR increases by 15%. What is the new price?", "options": {"A": "215", "B": "225", "C": "230", "D": "235"}, "answer": "C", "answer_text": "230", "explanation": "15% of 200 = 30. New price = 200 + 30 = 230."}, {"num": 18, "section": "Ratios, Percentages & Proportions", "question": "A 300 SAR item is discounted by 20%. What is the sale price?", "options": {"A": "220", "B": "230", "C": "240", "D": "260"}, "answer": "C", "answer_text": "240", "explanation": "20% of 300 = 60. 300 − 60 = 240."}, {"num": 19, "section": "Ratios, Percentages & Proportions", "question": "If 4 notebooks cost 28 SAR, how much do 7 notebooks cost at the same rate?", "options": {"A": "42", "B": "49", "C": "52", "D": "56"}, "answer": "B", "answer_text": "49", "explanation": "One notebook costs 28 ÷ 4 = 7 SAR. Seven cost 7 × 7 = 49 SAR."}, {"num": 20, "section": "Ratios, Percentages & Proportions", "question": "What percentage of 80 is 20?", "options": {"A": "20%", "B": "25%", "C": "30%", "D": "40%"}, "answer": "B", "answer_text": "25%", "explanation": "20 ÷ 80 = 0.25 = 25%."}, {"num": 21, "section": "Ratios, Percentages & Proportions", "question": "A class has 12 absent students out of 60. What percent is absent?", "options": {"A": "10%", "B": "15%", "C": "20%", "D": "25%"}, "answer": "C", "answer_text": "20%", "explanation": "12/60 = 1/5 = 20%."}, {"num": 22, "section": "Ratios, Percentages & Proportions", "question": "If x/18 = 5/6, what is x?", "options": {"A": "12", "B": "15", "C": "20", "D": "30"}, "answer": "B", "answer_text": "15", "explanation": "x = 18 × 5/6 = 3 × 5 = 15."}, {"num": 23, "section": "Units & Speed–Time–Distance", "question": "How many centimeters are in 2.5 meters?", "options": {"A": "25", "B": "250", "C": "2500", "D": "0.25"}, "answer": "B", "answer_text": "250", "explanation": "1 meter = 100 cm, so 2.5 × 100 = 250 cm."}, {"num": 24, "section": "Units & Speed–Time–Distance", "question": "A car travels 180 km in 3 hours. What is its average speed?", "options": {"A": "50 km/h", "B": "60 km/h", "C": "70 km/h", "D": "90 km/h"}, "answer": "B", "answer_text": "60 km/h", "explanation": "Speed = distance ÷ time = 180 ÷ 3 = 60 km/h."}, {"num": 25, "section": "Units & Speed–Time–Distance", "question": "At 80 km/h, how far does a car travel in 2.5 hours?", "options": {"A": "160 km", "B": "180 km", "C": "200 km", "D": "240 km"}, "answer": "C", "answer_text": "200 km", "explanation": "Distance = speed × time = 80 × 2.5 = 200 km."}, {"num": 26, "section": "Units & Speed–Time–Distance", "question": "How long does it take to travel 150 km at 50 km/h?", "options": {"A": "2 h", "B": "2.5 h", "C": "3 h", "D": "4 h"}, "answer": "C", "answer_text": "3 h", "explanation": "Time = distance ÷ speed = 150 ÷ 50 = 3 hours."}, {"num": 27, "section": "Units & Speed–Time–Distance", "question": "How many minutes are in 2 hours 15 minutes?", "options": {"A": "125", "B": "130", "C": "135", "D": "145"}, "answer": "C", "answer_text": "135", "explanation": "2 hours = 120 minutes. 120 + 15 = 135."}, {"num": 28, "section": "Units & Speed–Time–Distance", "question": "3.2 kilograms equals how many grams?", "options": {"A": "32", "B": "320", "C": "3200", "D": "32000"}, "answer": "C", "answer_text": "3200", "explanation": "1 kg = 1000 g, so 3.2 kg = 3200 g."}, {"num": 29, "section": "Units & Speed–Time–Distance", "question": "A runner covers 6 km in 30 minutes. At the same rate, how far in 90 minutes?", "options": {"A": "12 km", "B": "15 km", "C": "18 km", "D": "24 km"}, "answer": "C", "answer_text": "18 km", "explanation": "90 minutes is 3 times 30 minutes, so distance is 3 × 6 = 18 km."}, {"num": 30, "section": "Exponents", "question": "What is 2⁵?", "options": {"A": "10", "B": "16", "C": "32", "D": "64"}, "answer": "C", "answer_text": "32", "explanation": "2⁵ = 2×2×2×2×2 = 32."}, {"num": 31, "section": "Exponents", "question": "What is 3² × 3³?", "options": {"A": "3⁵", "B": "6⁵", "C": "9⁶", "D": "27²"}, "answer": "A", "answer_text": "3⁵", "explanation": "Same base: add exponents. 3² × 3³ = 3⁵."}, {"num": 32, "section": "Exponents", "question": "What is 5⁴ ÷ 5²?", "options": {"A": "5", "B": "5²", "C": "5⁶", "D": "25²"}, "answer": "B", "answer_text": "5²", "explanation": "Same base: subtract exponents. 5⁴ ÷ 5² = 5²."}, {"num": 33, "section": "Exponents", "question": "What is (2³)²?", "options": {"A": "2⁵", "B": "2⁶", "C": "4⁵", "D": "8²"}, "answer": "B", "answer_text": "2⁶", "explanation": "Power of a power: multiply exponents, 3×2 = 6."}, {"num": 34, "section": "Exponents", "question": "What is 10⁰?", "options": {"A": "0", "B": "1", "C": "10", "D": "100"}, "answer": "B", "answer_text": "1", "explanation": "Any nonzero number raised to the zero power equals 1."}, {"num": 35, "section": "Roots, Algebraic Expressions & Inequalities", "question": "What is √81?", "options": {"A": "7", "B": "8", "C": "9", "D": "10"}, "answer": "C", "answer_text": "9", "explanation": "9 × 9 = 81."}, {"num": 36, "section": "Roots, Algebraic Expressions & Inequalities", "question": "Simplify: 3x + 5x − 2.", "options": {"A": "8x−2", "B": "8x+2", "C": "15x−2", "D": "3x+3"}, "answer": "A", "answer_text": "8x−2", "explanation": "Combine like terms: 3x + 5x = 8x, so 8x − 2."}, {"num": 37, "section": "Roots, Algebraic Expressions & Inequalities", "question": "If 4x − 7 = 21, what is x?", "options": {"A": "5", "B": "6", "C": "7", "D": "8"}, "answer": "C", "answer_text": "7", "explanation": "Add 7: 4x = 28. Divide by 4: x = 7."}, {"num": 38, "section": "Roots, Algebraic Expressions & Inequalities", "question": "If 2(x + 3) = 18, what is x?", "options": {"A": "3", "B": "6", "C": "9", "D": "12"}, "answer": "B", "answer_text": "6", "explanation": "Divide by 2: x + 3 = 9. Subtract 3: x = 6."}, {"num": 39, "section": "Roots, Algebraic Expressions & Inequalities", "question": "Which value satisfies x + 4 > 10?", "options": {"A": "4", "B": "5", "C": "6", "D": "7"}, "answer": "D", "answer_text": "7", "explanation": "x > 6, so among the choices only 7 satisfies the inequality."}, {"num": 40, "section": "Roots, Algebraic Expressions & Inequalities", "question": "If y = 3x + 2 and x = 4, what is y?", "options": {"A": "10", "B": "12", "C": "14", "D": "16"}, "answer": "C", "answer_text": "14", "explanation": "y = 3(4) + 2 = 12 + 2 = 14."}, {"num": 41, "section": "Roots, Algebraic Expressions & Inequalities", "question": "Simplify: 5(a − 2) + 3.", "options": {"A": "5a−7", "B": "5a−10", "C": "5a+1", "D": "8a−2"}, "answer": "A", "answer_text": "5a−7", "explanation": "Distribute: 5a − 10 + 3 = 5a − 7."}, {"num": 42, "section": "Roots, Algebraic Expressions & Inequalities", "question": "If x² = 49 and x is positive, x = ?", "options": {"A": "5", "B": "6", "C": "7", "D": "8"}, "answer": "C", "answer_text": "7", "explanation": "The positive square root of 49 is 7."}, {"num": 43, "section": "Roots, Algebraic Expressions & Inequalities", "question": "Solve: 3x + 2 = 2x + 9.", "options": {"A": "5", "B": "6", "C": "7", "D": "11"}, "answer": "C", "answer_text": "7", "explanation": "Subtract 2x: x + 2 = 9. Subtract 2: x = 7."}, {"num": 44, "section": "Statistics", "question": "What is the mean of 6, 8, 10, and 12?", "options": {"A": "8", "B": "9", "C": "10", "D": "11"}, "answer": "B", "answer_text": "9", "explanation": "Sum = 36. 36 ÷ 4 = 9."}, {"num": 45, "section": "Statistics", "question": "What is the median of 3, 7, 9, 12, 20?", "options": {"A": "7", "B": "9", "C": "10", "D": "12"}, "answer": "B", "answer_text": "9", "explanation": "The middle value in the ordered list is 9."}, {"num": 46, "section": "Statistics", "question": "What is the mode of 2, 4, 4, 5, 6, 6, 6, 8?", "options": {"A": "4", "B": "5", "C": "6", "D": "8"}, "answer": "C", "answer_text": "6", "explanation": "6 occurs most often."}, {"num": 47, "section": "Statistics", "question": "What is the range of 14, 20, 11, 27, 18?", "options": {"A": "13", "B": "16", "C": "18", "D": "38"}, "answer": "B", "answer_text": "16", "explanation": "Range = maximum − minimum = 27 − 11 = 16."}, {"num": 48, "section": "Statistics", "question": "The mean of five numbers is 12. What is their total?", "options": {"A": "17", "B": "50", "C": "60", "D": "72"}, "answer": "C", "answer_text": "60", "explanation": "Total = mean × number of values = 12 × 5 = 60."}, {"num": 49, "section": "Statistics", "question": "Four test scores are 80, 85, 90, and 95. What score is needed on a fifth test for an average of 90?", "options": {"A": "90", "B": "95", "C": "100", "D": "105"}, "answer": "C", "answer_text": "100", "explanation": "Needed total = 90×5 = 450. Current total = 350. Needed score = 100."}, {"num": 50, "section": "Probability, Combinations & Permutations", "question": "A fair coin is tossed once. What is the probability of heads?", "options": {"A": "1/4", "B": "1/3", "C": "1/2", "D": "1"}, "answer": "C", "answer_text": "1/2", "explanation": "There are 2 equally likely outcomes and 1 is heads, so probability = 1/2."}, {"num": 51, "section": "Probability, Combinations & Permutations", "question": "A fair die is rolled. What is the probability of rolling an even number?", "options": {"A": "1/6", "B": "1/3", "C": "1/2", "D": "2/3"}, "answer": "C", "answer_text": "1/2", "explanation": "Even outcomes are 2,4,6: 3 out of 6 = 1/2."}, {"num": 52, "section": "Probability, Combinations & Permutations", "question": "A bag has 3 red and 2 blue balls. What is the probability of choosing a blue ball?", "options": {"A": "2/3", "B": "2/5", "C": "3/5", "D": "1/2"}, "answer": "B", "answer_text": "2/5", "explanation": "There are 2 blue out of 5 total, so 2/5."}, {"num": 53, "section": "Probability, Combinations & Permutations", "question": "How many different ways can 3 students stand in a line?", "options": {"A": "3", "B": "6", "C": "9", "D": "12"}, "answer": "B", "answer_text": "6", "explanation": "3! = 3×2×1 = 6."}, {"num": 54, "section": "Probability, Combinations & Permutations", "question": "From 5 students, how many different pairs can be chosen?", "options": {"A": "5", "B": "10", "C": "15", "D": "20"}, "answer": "B", "answer_text": "10", "explanation": "5 choose 2 = (5×4)/(2×1) = 10."}, {"num": 55, "section": "Probability, Combinations & Permutations", "question": "A spinner has 8 equal sections, 3 of them green. Probability of green?", "options": {"A": "3/5", "B": "3/8", "C": "5/8", "D": "1/3"}, "answer": "B", "answer_text": "3/8", "explanation": "Favorable outcomes / total outcomes = 3/8."}, {"num": 56, "section": "Probability, Combinations & Permutations", "question": "How many 2-letter arrangements can be made from A, B, C without repetition?", "options": {"A": "3", "B": "4", "C": "6", "D": "9"}, "answer": "C", "answer_text": "6", "explanation": "Choices: 3 for first letter, then 2 for second: 3×2 = 6."}, {"num": 57, "section": "Data Analysis & Straight Lines", "question": "Sales were 20, 30, 25, and 45 units over four weeks. What was the total?", "options": {"A": "100", "B": "110", "C": "120", "D": "130"}, "answer": "C", "answer_text": "120", "explanation": "20 + 30 + 25 + 45 = 120."}, {"num": 58, "section": "Data Analysis & Straight Lines", "question": "A value rises from 40 to 50. What is the percentage increase?", "options": {"A": "10%", "B": "20%", "C": "25%", "D": "40%"}, "answer": "C", "answer_text": "25%", "explanation": "Increase = 10. 10/40 = 0.25 = 25%."}, {"num": 59, "section": "Data Analysis & Straight Lines", "question": "In y = 2x + 3, what is the slope?", "options": {"A": "2", "B": "3", "C": "5", "D": "−2"}, "answer": "A", "answer_text": "2", "explanation": "In y = mx + b, m is the slope. Here m = 2."}, {"num": 60, "section": "Data Analysis & Straight Lines", "question": "In y = −3x + 7, what is the y-intercept?", "options": {"A": "−3", "B": "3", "C": "7", "D": "10"}, "answer": "C", "answer_text": "7", "explanation": "In y = mx + b, b is the y-intercept. Here b = 7."}, {"num": 61, "section": "Data Analysis & Straight Lines", "question": "Which point lies on y = x + 2?", "options": {"A": "(1,1)", "B": "(1,2)", "C": "(1,3)", "D": "(2,1)"}, "answer": "C", "answer_text": "(1,3)", "explanation": "Substitute x=1: y=1+2=3, so (1,3) lies on the line."}, {"num": 62, "section": "Data Analysis & Straight Lines", "question": "A table shows x: 1,2,3 and y: 4,7,10. What is the constant increase in y?", "options": {"A": "2", "B": "3", "C": "4", "D": "6"}, "answer": "B", "answer_text": "3", "explanation": "y increases by 3 each time: 4→7→10."}, {"num": 63, "section": "Data Analysis & Straight Lines", "question": "If a graph rises 12 units while moving 4 units right, what is its slope?", "options": {"A": "2", "B": "3", "C": "4", "D": "8"}, "answer": "B", "answer_text": "3", "explanation": "Slope = rise/run = 12/4 = 3."}, {"num": 64, "section": "Data Analysis & Straight Lines", "question": "A school had 200 students, then 230. By how many students did enrollment increase?", "options": {"A": "15", "B": "20", "C": "30", "D": "35"}, "answer": "C", "answer_text": "30", "explanation": "230 − 200 = 30."}, {"num": 65, "section": "Angles", "question": "What is the complement of 35°?", "options": {"A": "45°", "B": "55°", "C": "65°", "D": "145°"}, "answer": "B", "answer_text": "55°", "explanation": "Complementary angles sum to 90°. 90 − 35 = 55°."}, {"num": 66, "section": "Angles", "question": "What is the supplement of 120°?", "options": {"A": "30°", "B": "50°", "C": "60°", "D": "70°"}, "answer": "C", "answer_text": "60°", "explanation": "Supplementary angles sum to 180°. 180 − 120 = 60°."}, {"num": 67, "section": "Angles", "question": "Vertical opposite angles are:", "options": {"A": "Always equal", "B": "Always supplementary", "C": "Always 90°", "D": "Never equal"}, "answer": "A", "answer_text": "Always equal", "explanation": "Vertical opposite angles formed by intersecting lines are equal."}, {"num": 68, "section": "Angles", "question": "An angle measures 89°. It is:", "options": {"A": "Acute", "B": "Right", "C": "Obtuse", "D": "Straight"}, "answer": "A", "answer_text": "Acute", "explanation": "An acute angle is less than 90°."}, {"num": 69, "section": "Angles", "question": "Three angles around a point are 100°, 140°, and x. Find x.", "options": {"A": "100°", "B": "110°", "C": "120°", "D": "130°"}, "answer": "C", "answer_text": "120°", "explanation": "Angles around a point total 360°. x = 360 − 240 = 120°."}, {"num": 70, "section": "Triangles", "question": "Two angles of a triangle are 50° and 60°. What is the third angle?", "options": {"A": "60°", "B": "70°", "C": "80°", "D": "90°"}, "answer": "B", "answer_text": "70°", "explanation": "Triangle angles total 180°. 180 − 50 − 60 = 70°."}, {"num": 71, "section": "Triangles", "question": "A right triangle has legs 3 and 4. What is the hypotenuse?", "options": {"A": "5", "B": "6", "C": "7", "D": "8"}, "answer": "A", "answer_text": "5", "explanation": "By the 3-4-5 right triangle relationship, the hypotenuse is 5."}, {"num": 72, "section": "Triangles", "question": "An equilateral triangle has one angle of:", "options": {"A": "45°", "B": "60°", "C": "90°", "D": "120°"}, "answer": "B", "answer_text": "60°", "explanation": "All three equal angles sum to 180°, so each is 60°."}, {"num": 73, "section": "Triangles", "question": "An isosceles triangle has vertex angle 40°. Each base angle is:", "options": {"A": "40°", "B": "60°", "C": "70°", "D": "80°"}, "answer": "C", "answer_text": "70°", "explanation": "The two base angles are equal. (180−40)/2 = 70°."}, {"num": 74, "section": "Triangles", "question": "A triangle with sides 5, 5, and 8 is:", "options": {"A": "Equilateral", "B": "Isosceles", "C": "Scalene", "D": "Right only"}, "answer": "B", "answer_text": "Isosceles", "explanation": "Two sides are equal, so it is isosceles."}, {"num": 75, "section": "Triangles", "question": "Can lengths 2, 3, and 6 form a triangle?", "options": {"A": "Yes, always", "B": "Yes, right triangle", "C": "No", "D": "Only if angle is 90°"}, "answer": "C", "answer_text": "No", "explanation": "Triangle inequality: 2+3 must be greater than 6, but 5 is not greater than 6."}, {"num": 76, "section": "Polygons, Quadrilaterals & Circles", "question": "How many sides does a hexagon have?", "options": {"A": "5", "B": "6", "C": "7", "D": "8"}, "answer": "B", "answer_text": "6", "explanation": "A hexagon has 6 sides."}, {"num": 77, "section": "Polygons, Quadrilaterals & Circles", "question": "What is the sum of interior angles of a quadrilateral?", "options": {"A": "180°", "B": "270°", "C": "360°", "D": "540°"}, "answer": "C", "answer_text": "360°", "explanation": "A quadrilateral can be split into 2 triangles: 2×180° = 360°."}, {"num": 78, "section": "Polygons, Quadrilaterals & Circles", "question": "A square has side length 7 cm. What is its perimeter?", "options": {"A": "14", "B": "28", "C": "49", "D": "56"}, "answer": "B", "answer_text": "28", "explanation": "Perimeter = 4×side = 4×7 = 28 cm."}, {"num": 79, "section": "Polygons, Quadrilaterals & Circles", "question": "A circle has radius 5 cm. What is its diameter?", "options": {"A": "2.5 cm", "B": "5 cm", "C": "10 cm", "D": "25 cm"}, "answer": "C", "answer_text": "10 cm", "explanation": "Diameter = 2×radius = 10 cm."}, {"num": 80, "section": "Polygons, Quadrilaterals & Circles", "question": "Using π ≈ 3.14, circumference of a circle with diameter 10 cm is:", "options": {"A": "15.7 cm", "B": "31.4 cm", "C": "62.8 cm", "D": "314 cm"}, "answer": "B", "answer_text": "31.4 cm", "explanation": "Circumference = πd = 3.14×10 = 31.4 cm."}, {"num": 81, "section": "Polygons, Quadrilaterals & Circles", "question": "Which quadrilateral always has four equal sides and four right angles?", "options": {"A": "Rectangle", "B": "Rhombus", "C": "Square", "D": "Trapezoid"}, "answer": "C", "answer_text": "Square", "explanation": "A square has both four equal sides and four right angles."}, {"num": 82, "section": "Polygons, Quadrilaterals & Circles", "question": "How many diagonals does a quadrilateral have?", "options": {"A": "1", "B": "2", "C": "3", "D": "4"}, "answer": "B", "answer_text": "2", "explanation": "A quadrilateral has 2 diagonals connecting opposite vertices."}, {"num": 83, "section": "Areas, Perimeters & Volumes", "question": "Area of a rectangle 9 cm by 4 cm is:", "options": {"A": "13 cm²", "B": "26 cm²", "C": "36 cm²", "D": "72 cm²"}, "answer": "C", "answer_text": "36 cm²", "explanation": "Area = length×width = 9×4 = 36 cm²."}, {"num": 84, "section": "Areas, Perimeters & Volumes", "question": "Perimeter of a rectangle 9 cm by 4 cm is:", "options": {"A": "13 cm", "B": "26 cm", "C": "36 cm", "D": "72 cm"}, "answer": "B", "answer_text": "26 cm", "explanation": "Perimeter = 2(9+4) = 26 cm."}, {"num": 85, "section": "Areas, Perimeters & Volumes", "question": "Area of a triangle with base 10 cm and height 6 cm is:", "options": {"A": "16 cm²", "B": "30 cm²", "C": "60 cm²", "D": "120 cm²"}, "answer": "B", "answer_text": "30 cm²", "explanation": "Area = 1/2 × base × height = 1/2×10×6 = 30 cm²."}, {"num": 86, "section": "Areas, Perimeters & Volumes", "question": "Area of a square with side 8 cm is:", "options": {"A": "16 cm²", "B": "32 cm²", "C": "64 cm²", "D": "128 cm²"}, "answer": "C", "answer_text": "64 cm²", "explanation": "Area = side² = 8² = 64 cm²."}, {"num": 87, "section": "Areas, Perimeters & Volumes", "question": "Volume of a rectangular prism 3×4×5 is:", "options": {"A": "12", "B": "20", "C": "47", "D": "60"}, "answer": "D", "answer_text": "60", "explanation": "Volume = length×width×height = 3×4×5 = 60 cubic units."}, {"num": 88, "section": "Areas, Perimeters & Volumes", "question": "Using π≈3.14, area of a circle with radius 3 cm is closest to:", "options": {"A": "9.42", "B": "18.84", "C": "28.26", "D": "56.52"}, "answer": "C", "answer_text": "28.26", "explanation": "Area = πr² = 3.14×9 = 28.26 cm²."}, {"num": 89, "section": "Areas, Perimeters & Volumes", "question": "A square garden has perimeter 40 m. What is its area?", "options": {"A": "40 m²", "B": "80 m²", "C": "100 m²", "D": "160 m²"}, "answer": "C", "answer_text": "100 m²", "explanation": "Each side = 40÷4 = 10 m. Area = 10² = 100 m²."}, {"num": 90, "section": "Shaded Areas", "question": "A 10×8 rectangle contains an unshaded 4×3 rectangle. What is the shaded area?", "options": {"A": "12", "B": "56", "C": "68", "D": "80"}, "answer": "C", "answer_text": "68", "explanation": "Large area = 80. Unshaded area = 12. Shaded = 80−12 = 68."}, {"num": 91, "section": "Shaded Areas", "question": "A square has side 12 cm. A smaller square of side 5 cm is cut out. Remaining area?", "options": {"A": "119 cm²", "B": "125 cm²", "C": "139 cm²", "D": "144 cm²"}, "answer": "A", "answer_text": "119 cm²", "explanation": "Large square = 144. Small square = 25. Remaining = 119 cm²."}, {"num": 92, "section": "Shaded Areas", "question": "A rectangle 15×6 has half of its area shaded. Shaded area?", "options": {"A": "21", "B": "45", "C": "60", "D": "90"}, "answer": "B", "answer_text": "45", "explanation": "Total area = 90. Half = 45."}, {"num": 93, "section": "Shaded Areas", "question": "A 9×9 square contains an unshaded 3×3 square. Shaded area?", "options": {"A": "54", "B": "63", "C": "72", "D": "78"}, "answer": "C", "answer_text": "72", "explanation": "81−9 = 72."}, {"num": 94, "section": "Shaded Areas", "question": "A rectangle has area 120 cm². If 25% is unshaded, how much is shaded?", "options": {"A": "30", "B": "60", "C": "90", "D": "100"}, "answer": "C", "answer_text": "90", "explanation": "75% is shaded. 0.75×120 = 90 cm²."}, {"num": 95, "section": "Miscellaneous Quantitative", "question": "A number is increased by 20% and becomes 72. What was the original number?", "options": {"A": "50", "B": "60", "C": "62", "D": "64"}, "answer": "B", "answer_text": "60", "explanation": "120% of original = 72. Original = 72÷1.2 = 60."}, {"num": 96, "section": "Miscellaneous Quantitative", "question": "The average of x and 14 is 10. Find x.", "options": {"A": "4", "B": "6", "C": "8", "D": "12"}, "answer": "B", "answer_text": "6", "explanation": "(x+14)/2 = 10 → x+14=20 → x=6."}, {"num": 97, "section": "Miscellaneous Quantitative", "question": "If 5 workers finish a task in 12 days at the same rate, how many worker-days are needed?", "options": {"A": "17", "B": "50", "C": "60", "D": "120"}, "answer": "C", "answer_text": "60", "explanation": "Worker-days = 5×12 = 60."}, {"num": 98, "section": "Miscellaneous Quantitative", "question": "A train travels 120 km at 60 km/h and then 120 km at 40 km/h. Total travel time?", "options": {"A": "4 h", "B": "5 h", "C": "6 h", "D": "8 h"}, "answer": "B", "answer_text": "5 h", "explanation": "First part: 120/60=2 h. Second: 120/40=3 h. Total = 5 h."}, {"num": 99, "section": "Miscellaneous Quantitative", "question": "If 3 consecutive integers sum to 36, what is the middle integer?", "options": {"A": "10", "B": "11", "C": "12", "D": "13"}, "answer": "C", "answer_text": "12", "explanation": "Let them be 11,12,13. Their sum is 36, so the middle is 12."}, {"num": 100, "section": "Miscellaneous Quantitative", "question": "A shop buys an item for 80 SAR and sells it for 100 SAR. Profit as a percent of cost?", "options": {"A": "20%", "B": "25%", "C": "40%", "D": "80%"}, "answer": "B", "answer_text": "25%", "explanation": "Profit = 20. Profit percent = 20/80 = 25%."}];
+let order = [...questions];
+let state = {};
+let currentProfile = null;
+
+const quiz = document.getElementById('quiz');
+const sectionFilter = document.getElementById('sectionFilter');
+const stats = document.getElementById('stats');
+const loginOverlay = document.getElementById('loginOverlay');
+const profileOverlay = document.getElementById('profileOverlay');
+const studentBadge = document.getElementById('studentBadge');
+
+const sections = [...new Set(questions.map(q => q.section))];
+sections.forEach(s => {
+  const o = document.createElement('option');
+  o.value = s; o.textContent = s; sectionFilter.appendChild(o);
+});
+
+
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+}
+
+function render() {
+  const filter = sectionFilter.value;
+  quiz.innerHTML = '';
+  const visible = order.filter(q => filter === 'all' || q.section === filter);
+
+  visible.forEach(q => {
+    const st = state[q.num] || {};
+    const card = document.createElement('section');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="meta">
+        <div class="section">${escapeHtml(q.section)}</div>
+        <div class="qnum">Question ${q.num} / 100</div>
+      </div>
+      <div class="question">${escapeHtml(q.question)}</div>
+      <div class="options">
+        ${['A','B','C','D'].map(l => `
+          <button class="option
+            ${st.selected===l ? 'selected' : ''}
+            ${st.revealed ? (l===q.answer ? 'correct' : (st.selected===l ? 'wrong' : '')) : ''}"
+            data-q="${q.num}" data-l="${l}">
+            <span class="letter">${l}</span>${escapeHtml(q.options?.[l] || '')}
+          </button>`).join('')}
+      </div>
+      <div class="actions">
+        <button class="primary reveal" data-q="${q.num}">Show Answer & Explanation</button>
+      </div>
+      <div class="explanation ${st.revealed ? 'show' : ''}" id="exp-${q.num}">
+        <strong>Correct Answer: ${q.answer} — ${escapeHtml(q.answer_text || q.options?.[q.answer] || '')}</strong><br><br>
+        ${escapeHtml(q.explanation || '')}
+      </div>`;
+    quiz.appendChild(card);
+  });
+
+  document.querySelectorAll('.option').forEach(btn => btn.addEventListener('click', () => {
+    const n = Number(btn.dataset.q), l = btn.dataset.l;
+    if (state[n]?.revealed) return;
+    state[n] = { ...(state[n] || {}), selected:l };
+    render(); updateStats();
+  }));
+
+  document.querySelectorAll('.reveal').forEach(btn => btn.addEventListener('click', () => {
+    const n = Number(btn.dataset.q);
+    state[n] = { ...(state[n] || {}), revealed:true };
+    render(); updateStats();
+  }));
+}
+
+function currentVisibleQuestions() {
+  const filter = sectionFilter.value;
+  return order.filter(q => filter === 'all' || q.section === filter);
+}
+
+function computeResult() {
+  const visible = currentVisibleQuestions();
+  let answered = 0, correct = 0;
+  const details = [];
+  const breakdown = {};
+
+  visible.forEach(q => {
+    if (!breakdown[q.section]) breakdown[q.section] = {answered:0, correct:0, total:0};
+    breakdown[q.section].total++;
+
+    const s = state[q.num];
+    if (s?.revealed) {
+      answered++;
+      breakdown[q.section].answered++;
+      const isCorrect = s.selected === q.answer;
+      if (isCorrect) {
+        correct++;
+        breakdown[q.section].correct++;
+      }
+      details.push({
+        questionNumber:q.num,
+        section:q.section,
+        selected:s.selected || null,
+        correctAnswer:q.answer,
+        isCorrect
+      });
+    }
+  });
+
+  Object.values(breakdown).forEach(b => {
+    b.percentage = b.answered ? Math.round((b.correct / b.answered) * 100) : 0;
+  });
+
+  return {
+    scope: sectionFilter.value === 'all' ? 'All Sections' : sectionFilter.value,
+    answered,
+    correct,
+    incorrect: answered - correct,
+    percentage: answered ? Math.round((correct / answered) * 100) : 0,
+    breakdown,
+    details
+  };
+}
+
+function updateStats() {
+  const r = computeResult();
+  stats.textContent = `Answered: ${r.answered} | Correct: ${r.correct} | Score: ${r.percentage}%`;
+}
+
+async function loadProfile(user) {
+  const ref = doc(db, 'students', user.uid);
+  const snap = await getDoc(ref);
+  if (snap.exists()) {
+    currentProfile = snap.data();
+    studentBadge.textContent = `${currentProfile.name || 'Student'} | ID: ${currentProfile.studentId || ''}`;
+    profileOverlay.classList.add('hidden');
+  } else {
+    currentProfile = null;
+    document.getElementById('studentNameInput').value = '';
+    document.getElementById('studentIdInput').value = '';
+    profileOverlay.classList.remove('hidden');
+  }
+}
+
+document.getElementById('saveProfileBtn').addEventListener('click', async () => {
+  const user = auth.currentUser;
+  const name = document.getElementById('studentNameInput').value.trim();
+  const studentId = document.getElementById('studentIdInput').value.trim();
+  const err = document.getElementById('profileError');
+  if (!user || !name || !studentId) { err.textContent = 'Please enter your full name and Student ID.'; return; }
+
+  await setDoc(doc(db, 'students', user.uid), {
+    name,
+    studentId,
+    email:user.email,
+    createdAt:serverTimestamp(),
+    lastLoginAt:serverTimestamp()
+  }, { merge:true });
+
+  currentProfile = {name, studentId, email:user.email};
+  studentBadge.textContent = `${name} | ID: ${studentId}`;
+  profileOverlay.classList.add('hidden');
+  err.textContent = '';
+});
+
+document.getElementById('loginBtn').addEventListener('click', async () => {
+  const email = document.getElementById('studentEmailLogin').value.trim().toLowerCase();
+  const pass = document.getElementById('studentPassword').value;
+  const err = document.getElementById('loginError');
+  err.textContent = '';
+  if (!email || !pass) { err.textContent = 'Enter your school email and password.'; return; }
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
+  } catch (e) {
+    console.error(e);
+    err.textContent = 'School email or password is incorrect.';
+  }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
+
+onAuthStateChanged(auth, async user => {
+  if (user) {
+    loginOverlay.classList.add('hidden');
+    await loadProfile(user);
+    renderHistory();
+  } else {
+    currentProfile = null;
+    studentBadge.textContent = 'Not logged in';
+    loginOverlay.classList.remove('hidden');
+    profileOverlay.classList.add('hidden');
+  }
+});
+
+document.getElementById('saveAttemptBtn').addEventListener('click', async () => {
+  const user = auth.currentUser;
+  if (!user) { loginOverlay.classList.remove('hidden'); return; }
+  if (!currentProfile) { profileOverlay.classList.remove('hidden'); return; }
+
+  const result = computeResult();
+  if (!result.answered) {
+    alert('Answer and reveal at least one question before saving.');
+    return;
+  }
+
+  const payload = {
+    studentId: currentProfile.studentId,
+    studentName: currentProfile.name,
+    scope: result.scope,
+    answered: result.answered,
+    correct: result.correct,
+    incorrect: result.incorrect,
+    percentage: result.percentage,
+    sectionBreakdown: result.breakdown,
+    answers: result.details,
+    savedAt: serverTimestamp()
+  };
+
+  try {
+    await addDoc(collection(db, 'students', user.uid, 'attempts'), payload);
+    alert(`Result saved: ${result.scope} — ${result.correct}/${result.answered} (${result.percentage}%)`);
+    await renderHistory();
+    document.getElementById('historySection').classList.remove('hidden');
+  } catch (e) {
+    console.error(e);
+    alert('Could not save the result. Please contact your coordinator.');
+  }
+});
+
+async function renderHistory() {
+  const user = auth.currentUser;
+  const target = document.getElementById('historyTable');
+  if (!user) { target.innerHTML = '<p>Please log in.</p>'; return; }
+  target.innerHTML = 'Loading...';
+
+  try {
+    const snap = await getDocs(collection(db, 'students', user.uid, 'attempts'));
+    const rows = snap.docs.map(d => ({id:d.id, ...d.data()}))
+      .sort((a,b) => (b.savedAt?.seconds || 0) - (a.savedAt?.seconds || 0));
+
+    if (!rows.length) {
+      target.innerHTML = '<p>No saved attempts yet.</p>';
+      return;
+    }
+
+    target.innerHTML = `<table>
+      <thead><tr><th>Date</th><th>Section / Scope</th><th>Answered</th><th>Correct</th><th>Incorrect</th><th>Score</th></tr></thead>
+      <tbody>${rows.map(a => {
+        const dt = a.savedAt?.toDate ? a.savedAt.toDate().toLocaleString() : 'Saving...';
+        return `<tr>
+          <td>${escapeHtml(dt)}</td>
+          <td>${escapeHtml(a.scope)}</td>
+          <td>${a.answered}</td>
+          <td>${a.correct}</td>
+          <td>${a.incorrect}</td>
+          <td><strong>${a.percentage}%</strong></td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+  } catch (e) {
+    console.error(e);
+    target.innerHTML = '<p>Unable to load results.</p>';
+  }
+}
+
+document.getElementById('historyBtn').addEventListener('click', async () => {
+  const sec = document.getElementById('historySection');
+  sec.classList.toggle('hidden');
+  if (!sec.classList.contains('hidden')) await renderHistory();
+});
+
+sectionFilter.addEventListener('change', () => {
+  state = {};
+  order = [...questions];
+  render(); updateStats();
+});
+
+document.getElementById('shuffleBtn').addEventListener('click', () => {
+  order = [...order].sort(() => Math.random() - 0.5);
+  render();
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if (confirm('Reset current answers? Saved attempts will not be deleted.')) {
+    state = {};
+    order = [...questions];
+    render(); updateStats();
+  }
+});
+
+render();
+updateStats();
+</script>
+</body>
+</html>
